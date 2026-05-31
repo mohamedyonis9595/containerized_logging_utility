@@ -1,0 +1,37 @@
+networks:
+  logging_network:
+    driver: bridge
+
+services:
+  # 📝 THE AUTOMATED LOGGER (Generates continuous system timestamps)
+  time_logger:
+    image: alpine:latest
+    container_name: time_logger
+    networks:
+      - logging_network
+    volumes:
+      - log_data:/var/log/app
+    # Background script loops every 5 seconds writing formatted logs to a shared volume
+    command: >
+      /bin/sh -c "
+      mkdir -p /var/log/app &&
+      while true; do
+        echo \"[$(date '+%Y-%m-%d %H:%M:%S')] Production System Health: Active and Stable\" >> /var/log/app/system.log;
+        sleep 5;
+      done
+      "
+
+  # 🔍 THE LOG VIEWER (Simulates an administrator monitoring logs safely)
+  log_viewer:
+    image: alpine:latest
+    container_name: log_viewer
+    networks:
+      - logging_network
+    volumes:
+      - log_data:/var/log/app
+    depends_on:
+      - time_logger
+    command: tail -f /var/log/app/system.log
+
+volumes:
+  log_data: # Shared secure storage matrix between containers
